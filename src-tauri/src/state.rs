@@ -3,6 +3,7 @@ use tauri::{AppHandle, Manager, State};
 pub struct AppState {
     pub db: std::sync::Mutex<Option<Connection>>,
 }
+
 pub trait ServiceAccess {
     fn db<F, TResult>(&self, operation: F) -> TResult
     where
@@ -12,6 +13,7 @@ pub trait ServiceAccess {
     where
         F: FnOnce(&mut Connection) -> TResult;
 }
+
 impl ServiceAccess for AppHandle {
     fn db<F, TResult>(&self, operation: F) -> TResult
     where
