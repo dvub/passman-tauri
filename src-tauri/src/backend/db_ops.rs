@@ -166,6 +166,24 @@ pub mod crud_operations {
     }
 }
 pub mod util {
+
+    pub mod tauri {
+        use std::fs;
+
+        use rusqlite::Connection;
+        use tauri::AppHandle;
+
+        pub fn init_database(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
+            let app_dir = app_handle
+                .path_resolver()
+                .app_data_dir()
+                .expect("The app data directory must exist.");
+            fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
+            let sqlite_path = app_dir.join("data.db");
+            Connection::open(sqlite_path)
+        }
+    }
+
     use crate::backend::{crypto::*, error::*, password::PasswordField};
 
     use rusqlite::{Connection, OptionalExtension};
@@ -175,6 +193,7 @@ pub mod util {
     pub fn establish_connection() -> Result<rusqlite::Connection, rusqlite::Error> {
         Connection::open("./data.db")
     }
+
     // I've considered using format!() here to make sure the struct name/fields match this statement
     // (and potentially other SQLite statement strings), but I think that may just be overengineering.
 
@@ -218,7 +237,6 @@ pub mod util {
     /// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
     /// - `master` - a string slice that holds the master password.
     ///
-    #[tauri::command]
     pub fn authenticate(
         connection: &Connection,
         master: &str,

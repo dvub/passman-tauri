@@ -13,6 +13,10 @@ use cli::{
     Operation,
 };
 // very simple main program, yay!
+
+// TODO: implement bcrypt or argon2
+// implement zeroize
+
 fn main() -> anyhow::Result<()> {
     let connection = establish_connection()?;
 
