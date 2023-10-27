@@ -18,7 +18,7 @@ pub struct PasswordInfo {
     pub password: Option<String>,
 }
 /// Enum containing different fields on `PasswordInfo`. Primarily used in inserting or updating data.
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum PasswordField {
     Email,
     Username,

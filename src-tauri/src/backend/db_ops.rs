@@ -1,5 +1,5 @@
 pub const MASTER_KEYWORD: &str = ".master";
-pub mod crud {
+pub mod crud_operations {
     use crate::backend::{
         crypto::*,
         error::*,
@@ -170,7 +170,7 @@ pub mod util {
 
     use rusqlite::{Connection, OptionalExtension};
 
-    use super::{crud::get_password_info, MASTER_KEYWORD};
+    use super::{crud_operations::get_password_info, MASTER_KEYWORD};
     /// Establishes a connection to the SQLite database
     pub fn establish_connection() -> Result<rusqlite::Connection, rusqlite::Error> {
         Connection::open("./data.db")
@@ -218,6 +218,7 @@ pub mod util {
     /// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
     /// - `master` - a string slice that holds the master password.
     ///
+    #[tauri::command]
     pub fn authenticate(
         connection: &Connection,
         master: &str,
@@ -299,7 +300,7 @@ mod tests {
             .unwrap();
         assert_eq!(insert, 1);
 
-        let res = super::crud::read_password_info(&connection, name, master).unwrap();
+        let res = super::crud_operations::read_password_info(&connection, name, master).unwrap();
 
         assert_eq!(
             res.expect("no password found")
@@ -317,10 +318,16 @@ mod tests {
         let name = "test_name";
         let password = "coolpassword";
 
-        super::crud::insert_data(&connection, name, master, PasswordField::Password, password)
-            .unwrap();
+        super::crud_operations::insert_data(
+            &connection,
+            name,
+            master,
+            PasswordField::Password,
+            password,
+        )
+        .unwrap();
 
-        let r = super::crud::read_password_info(&connection, name, master)
+        let r = super::crud_operations::read_password_info(&connection, name, master)
             .unwrap()
             .unwrap();
         assert_eq!(r.password.unwrap(), password);
@@ -334,11 +341,17 @@ mod tests {
         let name = "test_name";
         let password = "coolpassword";
 
-        super::crud::insert_data(&connection, name, master, PasswordField::Password, password)
-            .unwrap();
+        super::crud_operations::insert_data(
+            &connection,
+            name,
+            master,
+            PasswordField::Password,
+            password,
+        )
+        .unwrap();
 
-        super::crud::delete_password_info(&connection, name).unwrap();
-        let result = super::crud::read_password_info(&connection, name, master).unwrap();
+        super::crud_operations::delete_password_info(&connection, name).unwrap();
+        let result = super::crud_operations::read_password_info(&connection, name, master).unwrap();
         assert!(result.is_none())
     }
     #[test]
@@ -350,7 +363,7 @@ mod tests {
         // first, make sure the function returns false if no data exists
         assert!(!super::util::check_password_info_exists(&connection, name).unwrap());
         // now lets insert some data
-        super::crud::insert_data(
+        super::crud_operations::insert_data(
             &connection,
             name,
             master,

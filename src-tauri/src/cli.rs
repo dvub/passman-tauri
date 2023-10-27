@@ -30,7 +30,7 @@ pub enum LoginOperations {
 pub mod crud_operations {
     use crate::backend::{
         db_ops::{
-            crud::{delete_password_info, read_password_info},
+            crud_operations::{delete_password_info, read_password_info},
             util::check_password_info_exists,
         },
         password::PasswordField,
@@ -132,7 +132,7 @@ pub mod utility {
     use crate::backend::{
         crypto::hash,
         db_ops::{
-            crud::{get_password_info, insert_data},
+            crud_operations::{get_password_info, insert_data},
             util::authenticate,
             MASTER_KEYWORD,
         },
@@ -149,7 +149,8 @@ pub mod utility {
 
         use crate::{
             backend::{
-                crypto::generate_password, db_ops::crud::insert_data, password::PasswordField,
+                crypto::generate_password, db_ops::crud_operations::insert_data,
+                password::PasswordField,
             },
             cli::PasswordGeneration,
         };
