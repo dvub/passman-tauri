@@ -41,7 +41,8 @@ impl Display for PasswordField {
 // is this even necessary?
 #[cfg(test)]
 mod tests {
-    use crate::backend::password::PasswordField;
+
+    use crate::password::PasswordField;
 
     #[test]
     fn test_display() {

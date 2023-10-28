@@ -1,15 +1,18 @@
 pub const MASTER_KEYWORD: &str = ".master";
+
 pub mod crud_operations {
-    use crate::backend::{
-        crypto::*,
-        error::*,
-        password::{PasswordField, PasswordInfo},
-    };
+
     use aes_gcm::{
         aead::{generic_array::GenericArray, Aead, OsRng},
         AeadCore, Aes256Gcm,
     };
     use rusqlite::{Connection, OptionalExtension};
+
+    use {
+        crate::crypto::*,
+        crate::error::*,
+        crate::password::{PasswordField, PasswordInfo},
+    };
     /// Reads a `Password` from the SQLite database. The password should contain encrypted fields.
     /// This function may fail with `rusqlite::Error`. Otherwise it will return an `Option<Password>`, being none if no password is found with the given search term.
     ///
@@ -184,7 +187,7 @@ pub mod util {
         }
     }
 
-    use crate::backend::{crypto::*, error::*, password::PasswordField};
+    use crate::{crypto::*, error::*, password::PasswordField};
 
     use rusqlite::{Connection, OptionalExtension};
 
@@ -258,8 +261,8 @@ pub mod util {
 mod tests {
     use super::MASTER_KEYWORD;
     use crate::{
-        backend::crypto::derive_key,
-        backend::{crypto::hash, password::PasswordField},
+        crypto::derive_key,
+        {crypto::hash, password::PasswordField},
     };
     use aes_gcm::{
         aead::{generic_array::GenericArray, Aead, OsRng},
