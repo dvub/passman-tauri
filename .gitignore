@@ -11,5 +11,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # ignore rust-related stuff
-/src-tauri/data.db
-/src-tauri/target/
+src-tauri/target/
+src-tauri/data.db
