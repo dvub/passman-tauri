@@ -176,14 +176,27 @@ pub mod util {
         use rusqlite::Connection;
         use tauri::AppHandle;
 
+        use super::create_table;
+
         pub fn init_database(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
+            //
+            // this is just preliminary stuff to setup the proper directory to store our data/database.
+            // this is also sourced from : https://github.com/RandomEngy/tauri-sqlite
+            //
             let app_dir = app_handle
                 .path_resolver()
                 .app_data_dir()
                 .expect("The app data directory must exist.");
             fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
             let sqlite_path = app_dir.join("data.db");
-            Connection::open(sqlite_path)
+
+            // now we'll actually open our connection to the database.
+            let conn = Connection::open(sqlite_path)?;
+            create_table(&conn)?; // here we will create the table if it doesn't exist
+
+            // TODO: implement check for and update database version ?
+
+            Ok(conn)
         }
     }
 
