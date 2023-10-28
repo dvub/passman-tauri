@@ -168,55 +168,54 @@ pub mod crud_operations {
         connection.execute("delete from PasswordInfo where name = ?", [password_name])
     }
 }
-pub mod util {
 
-    pub mod tauri {
-        use std::fs;
+pub mod tauri {
+    use std::fs;
 
-        use rusqlite::Connection;
-        use tauri::AppHandle;
+    use rusqlite::Connection;
+    use tauri::AppHandle;
 
-        use super::create_table;
+    use super::create_table;
 
-        pub fn init_database(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
-            //
-            // this is just preliminary stuff to setup the proper directory to store our data/database.
-            // this is also sourced from : https://github.com/RandomEngy/tauri-sqlite
-            //
-            let app_dir = app_handle
-                .path_resolver()
-                .app_data_dir()
-                .expect("The app data directory must exist.");
-            fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-            let sqlite_path = app_dir.join("data.db");
+    pub fn init_database(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
+        //
+        // this is just preliminary stuff to setup the proper directory to store our data/database.
+        // this is also sourced from : https://github.com/RandomEngy/tauri-sqlite
+        //
+        let app_dir = app_handle
+            .path_resolver()
+            .app_data_dir()
+            .expect("The app data directory must exist.");
+        fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
+        let sqlite_path = app_dir.join("data.db");
 
-            // now we'll actually open our connection to the database.
-            let conn = Connection::open(sqlite_path)?;
-            create_table(&conn)?; // here we will create the table if it doesn't exist
+        // now we'll actually open our connection to the database.
+        let conn = Connection::open(sqlite_path)?;
+        create_table(&conn)?; // here we will create the table if it doesn't exist
 
-            // TODO: implement check for and update database version ?
+        // TODO: implement check for and update database version ?
 
-            Ok(conn)
-        }
+        Ok(conn)
     }
+}
 
-    use crate::{crypto::*, error::*, password::PasswordField};
+use crate::{crypto::*, error::*, password::PasswordField};
 
-    use rusqlite::{Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension};
 
-    use super::{crud_operations::get_password_info, MASTER_KEYWORD};
-    /// Establishes a connection to the SQLite database
-    pub fn establish_connection() -> Result<rusqlite::Connection, rusqlite::Error> {
-        Connection::open("./data.db")
-    }
+use crud_operations::get_password_info;
+/// Establishes a connection to the SQLite database
+pub fn establish_connection() -> Result<rusqlite::Connection, rusqlite::Error> {
+    Connection::open("./data.db")
+}
 
-    // I've considered using format!() here to make sure the struct name/fields match this statement
-    // (and potentially other SQLite statement strings), but I think that may just be overengineering.
+// I've considered using format!() here to make sure the struct name/fields match this statement
+// (and potentially other SQLite statement strings), but I think that may just be overengineering.
 
-    /// Creates the SQLite table equivelant of the `Password` struct.
-    pub fn create_table(connection: &Connection) -> Result<usize, rusqlite::Error> {
-        connection.execute(
-            "CREATE TABLE IF NOT EXISTS PasswordInfo (
+/// Creates the SQLite table equivelant of the `Password` struct.
+pub fn create_table(connection: &Connection) -> Result<usize, rusqlite::Error> {
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS PasswordInfo (
         id INTEGER NOT NULL PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
         username TEXT DEFAULT NULL,
@@ -224,50 +223,48 @@ pub mod util {
         password TEXT DEFAULT NULL,
         notes TEXT DEFAULT NULL
       );",
-            (),
-        )
-    }
+        (),
+    )
+}
 
-    /// Check if a password exists. May fail with `rusqlite::Error`.
-    /// Checks if an `optional()` query `is_some()`, i.e. returns `false` if `None`.
-    /// # Arguments
-    ///
-    /// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
-    /// - `password_name` - a string slice that holds the name of the password to insert or update into.
-    ///
-    pub fn check_password_info_exists(
-        connection: &Connection,
-        password_name: &str,
-    ) -> Result<bool, rusqlite::Error> {
-        let mut stmt = connection.prepare("select * from PasswordInfo where name = ? ")?;
-        let master_exists = stmt
-            .query_row([password_name], |_| Ok(()))
-            .optional()?
-            .is_some();
-        Ok(master_exists)
-    }
-    /// Check if a password exists. May fail with `rusqlite::Error`.
-    /// Checks if an `optional()` query `is_some()`, i.e. returns `false` if `None`.
-    /// ///  # Arguments
-    ///
-    /// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
-    /// - `master` - a string slice that holds the master password.
-    ///
-    pub fn authenticate(
-        connection: &Connection,
-        master: &str,
-        column: PasswordField,
-    ) -> Result<bool, BackendError> {
-        // unwrapping values because these values MUST exist at this point in the application
-        let master_record = get_password_info(connection, MASTER_KEYWORD)?.unwrap();
-        let data = match column {
-            PasswordField::Password => Ok(master_record.password.unwrap()),
-            PasswordField::Notes => Ok(master_record.notes.unwrap()),
-            _ => Err(BackendError::InvalidMasterRecordField),
-        }?;
+/// Check if a password exists by checking if an `optional()` query `is_some()`, i.e. returns `false` if `None`.
+/// # Arguments
+///
+/// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
+/// - `password_name` - a string slice that holds the name of the password to insert or update into.
+///
+pub fn check_password_info_exists(
+    connection: &Connection,
+    password_name: &str,
+) -> Result<bool, rusqlite::Error> {
+    let mut stmt = connection.prepare("select * from PasswordInfo where name = ? ")?;
+    let master_exists = stmt
+        .query_row([password_name], |_| Ok(()))
+        .optional()?
+        .is_some();
+    Ok(master_exists)
+}
+/// Check if a password exists. May fail with `rusqlite::Error`.
+/// Checks if an `optional()` query `is_some()`, i.e. returns `false` if `None`.
+/// ///  # Arguments
+///
+/// - `connection` - a reference to a `rusqlite::Connection`, which may be to a file or in memory.
+/// - `master` - a string slice that holds the master password.
+///
+pub fn authenticate(
+    connection: &Connection,
+    master: &str,
+    column: PasswordField,
+) -> Result<bool, BackendError> {
+    // unwrapping values because these values MUST exist at this point in the application
+    let master_record = get_password_info(connection, MASTER_KEYWORD)?.unwrap();
+    let data = match column {
+        PasswordField::Password => Ok(master_record.password.unwrap()),
+        PasswordField::Notes => Ok(master_record.notes.unwrap()),
+        _ => Err(BackendError::InvalidMasterRecordField),
+    }?;
 
-        Ok(hash(master.as_bytes()).to_vec() == hex::decode(data)?)
-    }
+    Ok(hash(master.as_bytes()).to_vec() == hex::decode(data)?)
 }
 
 #[cfg(test)]
@@ -291,16 +288,16 @@ mod tests {
 
     #[test]
     fn establish_connection() {
-        assert!(super::util::establish_connection().is_ok());
+        assert!(super::establish_connection().is_ok());
     }
     #[test]
     fn create_table() {
-        assert!(super::util::create_table(&Connection::open_in_memory().unwrap()).is_ok());
+        assert!(super::create_table(&Connection::open_in_memory().unwrap()).is_ok());
     }
     #[test]
     fn test_data() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
 
         // just make sure that the insert test data function is working and inserts a row
         let insert_result = insert_test_data(&connection).unwrap();
@@ -309,7 +306,7 @@ mod tests {
     #[test]
     fn read_password() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
 
         let master = "mymasterpassword";
         let name = "test_name";
@@ -346,7 +343,7 @@ mod tests {
     #[test]
     fn insert_data() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
 
         let master = "mymasterpassword";
         let name = "test_name";
@@ -369,7 +366,7 @@ mod tests {
     #[test]
     fn delete() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
 
         let master = "mymasterpassword";
         let name = "test_name";
@@ -391,11 +388,11 @@ mod tests {
     #[test]
     fn check_exists() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
         let master = "masterpassword";
         let name = "test";
         // first, make sure the function returns false if no data exists
-        assert!(!super::util::check_password_info_exists(&connection, name).unwrap());
+        assert!(!super::check_password_info_exists(&connection, name).unwrap());
         // now lets insert some data
         super::crud_operations::insert_data(
             &connection,
@@ -406,12 +403,12 @@ mod tests {
         )
         .unwrap();
         // finally, we'll check one more time to make sure it's returning true since we added data
-        assert!(super::util::check_password_info_exists(&connection, name).unwrap());
+        assert!(super::check_password_info_exists(&connection, name).unwrap());
     }
     #[test]
     fn authenticate() {
         let connection = Connection::open_in_memory().unwrap();
-        super::util::create_table(&connection).unwrap();
+        super::create_table(&connection).unwrap();
         let new_master = "mymasterpassword";
         let recovery_note = "abcd";
 
@@ -426,15 +423,11 @@ mod tests {
             )
             .unwrap();
 
-        assert!(super::util::authenticate(
-            &connection,
-            "mymasterpassword",
-            PasswordField::Password
-        )
-        .unwrap());
         assert!(
-            !super::util::authenticate(&connection, "random_guess", PasswordField::Password)
-                .unwrap()
+            super::authenticate(&connection, "mymasterpassword", PasswordField::Password).unwrap()
+        );
+        assert!(
+            !super::authenticate(&connection, "random_guess", PasswordField::Password).unwrap()
         );
     }
 }

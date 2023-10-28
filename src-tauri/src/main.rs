@@ -8,8 +8,8 @@ pub mod password;
 pub mod state;
 
 use db_ops::{
-    util::{check_password_info_exists, tauri::init_database},
     MASTER_KEYWORD,
+    {check_password_info_exists, tauri::init_database},
 };
 use state::{AppState, ServiceAccess};
 use tauri::{AppHandle, Manager, State};
