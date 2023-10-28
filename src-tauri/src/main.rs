@@ -7,31 +7,41 @@ pub mod error;
 pub mod password;
 pub mod state;
 
-use db_ops::util::authenticate;
-use password::PasswordField;
+use db_ops::{
+    util::{check_password_info_exists, tauri::init_database},
+    MASTER_KEYWORD,
+};
 use state::{AppState, ServiceAccess};
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
-fn auth(app_handle: AppHandle, master: &str, column: PasswordField) -> bool {
+fn check_master_exists(app_handle: AppHandle) -> bool {
     app_handle
-        .db(|db| authenticate(db, master, column))
+        .db(|connection| check_password_info_exists(connection, MASTER_KEYWORD))
         .unwrap()
 }
 
 fn main() {
     tauri::Builder::default()
         .manage(AppState {
-            db: Default::default(),
+            connection: Default::default(),
         })
+        // setup function:
+        // this is where we can do any database connection, setup, upgrades, etc.
+        // m
         .setup(|app| {
             let handle = app.handle();
             let app_state: State<AppState> = handle.state();
-            let db = db_ops::util::tauri::init_database(&handle)
-                .expect("Database initialization should succeed");
-            *app_state.db.lock().unwrap() = Some(db);
+
+            // create our database connection, as well as inserting our table, etc.
+            let connection =
+                init_database(&handle).expect("Database initialization should succeed");
+            // setting the state's `connection` field to the one we just initialized.
+
+            *app_state.connection.lock().unwrap() = Some(connection);
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![check_master_exists])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
