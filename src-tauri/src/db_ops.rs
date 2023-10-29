@@ -204,6 +204,10 @@ use crate::{crypto::*, error::*, password::PasswordField};
 use rusqlite::{Connection, OptionalExtension};
 
 use crud_operations::get_password_info;
+
+// I've considered using format!() here to make sure the struct name/fields match this statement
+// (and potentially other SQLite statement strings), but I think that may just be overengineering.
+
 /// Establishes a connection to the SQLite database
 pub fn establish_connection() -> Result<rusqlite::Connection, rusqlite::Error> {
     Connection::open("./data.db")
@@ -225,6 +229,22 @@ pub fn create_table(connection: &Connection) -> Result<usize, rusqlite::Error> {
       );",
         (),
     )
+}
+///
+pub fn initalize_database() -> Result<rusqlite::Connection, rusqlite::Error> {
+    let connection = Connection::open("./data.db")?;
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS PasswordInfo (
+        id INTEGER NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        username TEXT DEFAULT NULL,
+        email TEXT DEFAULT NULL,
+        password TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL
+      );",
+        (),
+    )?;
+    Ok(connection)
 }
 
 /// Check if a password exists by checking if an `optional()` query `is_some()`, i.e. returns `false` if `None`.
