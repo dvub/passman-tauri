@@ -8,21 +8,8 @@ pub mod password;
 pub mod state;
 
 use db_ops::tauri::init_database;
-use state::{AppState, ServiceAccess};
-use tauri::{AppHandle, Manager, State};
-
-#[tauri::command]
-fn execute_function(app_handle: AppHandle) {
-    app_handle.db(|connection| {})
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, ts_rs::TS)]
-#[serde(tag = "type")]
-#[ts(export, export_to = "../../src/types/generated/SqlFunction.ts")]
-enum SqlFunction {
-    CheckPasswordInfoExists { name: String },
-    Authenticate { master_password: String },
-}
+use state::AppState;
+use tauri::{Manager, State};
 
 fn main() {
     tauri::Builder::default()
@@ -44,7 +31,7 @@ fn main() {
             *app_state.connection.lock().unwrap() = Some(connection);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![execute_function])
+        .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
