@@ -17,24 +17,12 @@ use state::{AppState, ServiceAccess};
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
-fn execute_function(
+fn read_password(
     app_handle: AppHandle,
-    function: SqlFunction,
-) -> Result<serde_json::Value, BackendError> {
-    let result = app_handle.db(|connection| match function {
-        SqlFunction::ReadPasswordInfo {
-            search_term,
-            master,
-        } => {
-            let p = read_password_info(connection, &search_term, &master)?;
-            serde_json::Value::from(p);
-            serde_json::from_value(p)
-        }
-    });
-}
-
-enum SqlFunction {
-    ReadPasswordInfo { search_term: String, master: String },
+    search_term: &str,
+    master: &str,
+) -> Result<Option<PasswordInfo>, BackendError> {
+    app_handle.db(|connection| read_password_info(connection, search_term, master))
 }
 
 fn main() {
@@ -57,7 +45,7 @@ fn main() {
             *app_state.connection.lock().unwrap() = Some(connection);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![read_password])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
