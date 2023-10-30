@@ -7,9 +7,35 @@ pub mod error;
 pub mod password;
 pub mod state;
 
-use db_ops::tauri::init_database;
-use state::AppState;
-use tauri::{Manager, State};
+use db_ops::{
+    crud_operations::{insert_data, read_password_info},
+    tauri::init_database,
+};
+use error::BackendError;
+use password::{PasswordField, PasswordInfo};
+use state::{AppState, ServiceAccess};
+use tauri::{AppHandle, Manager, State};
+
+#[tauri::command]
+fn execute_function(
+    app_handle: AppHandle,
+    function: SqlFunction,
+) -> Result<serde_json::Value, BackendError> {
+    let result = app_handle.db(|connection| match function {
+        SqlFunction::ReadPasswordInfo {
+            search_term,
+            master,
+        } => {
+            let p = read_password_info(connection, &search_term, &master)?;
+            serde_json::Value::from(p);
+            serde_json::from_value(p)
+        }
+    });
+}
+
+enum SqlFunction {
+    ReadPasswordInfo { search_term: String, master: String },
+}
 
 fn main() {
     tauri::Builder::default()
