@@ -7,23 +7,9 @@ pub mod error;
 pub mod password;
 pub mod state;
 
-use db_ops::{
-    crud_operations::{insert_data, read_password_info},
-    tauri::init_database,
-};
-use error::BackendError;
-use password::{PasswordField, PasswordInfo};
-use state::{AppState, ServiceAccess};
-use tauri::{AppHandle, Manager, State};
-
-#[tauri::command]
-fn read_password(
-    app_handle: AppHandle,
-    search_term: &str,
-    master: &str,
-) -> Result<Option<PasswordInfo>, BackendError> {
-    app_handle.db(|connection| read_password_info(connection, search_term, master))
-}
+use db_ops::tauri::init_database;
+use state::AppState;
+use tauri::{Manager, State};
 
 fn main() {
     tauri::Builder::default()
@@ -45,7 +31,7 @@ fn main() {
             *app_state.connection.lock().unwrap() = Some(connection);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![read_password])
+        .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
